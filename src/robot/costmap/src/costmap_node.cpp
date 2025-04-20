@@ -9,6 +9,7 @@
 
  
 CostmapNode::CostmapNode() : Node("costmap"), costmap_(robot::CostmapCore(this->get_logger())) {
+  
   // Initialize the constructs and their parameters
   costmap_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("/costmap", 10);
   string_pub_ = this->create_publisher<std_msgs::msg::String>("/test_topic", 10);
@@ -51,7 +52,7 @@ void CostmapNode::inflateObstacles() {
 
   for (int y{0}; y < y_grid; ++y) {
     for (int x{0}; x < x_grid; ++x) {
-      if (OccupancyGrid[x][y] == max_cost) {
+      if (OccupancyGrid[x][y] == most) {
         for (int dy{cell_radius}; dy >= -cell_radius; --dy) {
           for (int dx{cell_radius}; dx >= -cell_radius; --dx) {
             int i = x + dx;
