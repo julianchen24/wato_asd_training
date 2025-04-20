@@ -4,6 +4,9 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
  
+#include "sensor_msgs/msg/laser_scan.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+
 #include "costmap_core.hpp"
  
 class CostmapNode : public rclcpp::Node {
@@ -25,8 +28,12 @@ class CostmapNode : public rclcpp::Node {
     double resolution = 0.1;
     int x_grid, y_grid;
     // Place these constructs here
-    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr string_pub_;
     rclcpp::TimerBase::SharedPtr timer_;
+    // For your “Hello, ROS 2!” test
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr string_pub_;
+   // Costmap publisher (you need this!)
+    rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_pub_;
+
 };
  
 #endif 

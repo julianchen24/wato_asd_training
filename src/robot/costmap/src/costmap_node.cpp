@@ -4,6 +4,9 @@
 #include "rclcpp/rclcpp.hpp"
  
 #include "costmap_node.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+
  
 CostmapNode::CostmapNode() : Node("costmap"), costmap_(robot::CostmapCore(this->get_logger())) {
   // Initialize the constructs and their parameters
