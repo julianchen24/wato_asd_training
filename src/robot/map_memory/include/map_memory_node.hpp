@@ -2,8 +2,10 @@
 #define MAP_MEMORY_NODE_HPP_
 
 #include "rclcpp/rclcpp.hpp"
-
 #include "map_memory_core.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 
 class MapMemoryNode : public rclcpp::Node {
   public:

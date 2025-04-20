@@ -52,7 +52,7 @@ void CostmapNode::inflateObstacles() {
 
   for (int y{0}; y < y_grid; ++y) {
     for (int x{0}; x < x_grid; ++x) {
-      if (OccupancyGrid[x][y] == most) {
+      if (OccupancyGrid[x][y] == static_cast<int>(max_cost)) {
         for (int dy{cell_radius}; dy >= -cell_radius; --dy) {
           for (int dx{cell_radius}; dx >= -cell_radius; --dx) {
             int i = x + dx;
@@ -60,7 +60,7 @@ void CostmapNode::inflateObstacles() {
             if (i < 0 || i >= x_grid || j < 0 || j >= y_grid) {
               continue;
             }
-            if (OccupancyGrid[i][j] == max_cost) {
+            if (OccupancyGrid[i][j] == static_cast<int>(max_cost)) {
               continue;
             }
             double distance = std::sqrt(std::pow(dy,2) + std::pow(dx,2));
