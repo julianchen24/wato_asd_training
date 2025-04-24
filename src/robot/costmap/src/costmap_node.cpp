@@ -43,7 +43,7 @@ void CostmapNode::convertToGrid(double range, double angle, int& x_grid, int& y_
 
   // x_grid = static_cast<int>((x_world / resolution) + (this->x_grid / 2));
   // y_grid = static_cast<int>((y_world / resolution) + (this->y_grid / 2));
-  
+
   double x_local = range * std::cos(angle);
   double y_local = range * std::sin(angle);
 
@@ -72,7 +72,7 @@ void CostmapNode::markObstacle(int x_grid, int y_grid) {
 }
 
 void CostmapNode::inflateObstacles() {
-  double radius = 1.0;
+  double radius = 0.5;
   double max_cost = 100.0;
   int cell_radius = static_cast<int>(radius / resolution);
 
@@ -111,12 +111,13 @@ void CostmapNode::publishCostmap() {
   costmap_msg.info.origin.position.x = -(x_grid * resolution)/2;
   costmap_msg.info.origin.position.y = -(y_grid * resolution)/2;
 
-  costmap_msg.data.resize(x_grid * y_grid);
+  std::vector<int8_t> data(x_grid * y_grid, 0);
   for (int y{0}; y < y_grid; ++y) {
     for (int x{0}; x < x_grid; ++x) {
-      costmap_msg.data[y * x_grid + x] = static_cast<int8_t>(OccupancyGrid[x][y]);
+      data[y * x_grid + x] = static_cast<int8_t>(OccupancyGrid[x][y]);
     }
   }
+  costmap_msg.data = data;
   costmap_pub_->publish(costmap_msg);
 }
 

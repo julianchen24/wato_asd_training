@@ -86,7 +86,7 @@ void MapMemoryNode::integrateCostmap() {
       int global_i = static_cast<int>((global_x - global_map_.info.origin.position.x) / global_map_.info.resolution);
       int global_j = static_cast<int>((global_y - global_map_.info.origin.position.y) / global_map_.info.resolution);
 
-      if (global_i < 0 || global_i >= global_map_.info.width || global_j < 0 || global_j >= global_map_.info.height) {
+      if (global_i < 0 || global_i >= static_cast<int>(global_map_.info.width) || global_j < 0 || global_j >= static_cast<int>(global_map_.info.height)) {
         continue;
       }
 
