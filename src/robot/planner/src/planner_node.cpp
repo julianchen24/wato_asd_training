@@ -1,5 +1,6 @@
 #include "planner_node.hpp"
-PlannerNode::PlannerNode() : Node("planner"), planner_(robot::PlannerCore(this->get_logger())) {
+PlannerNode::PlannerNode() : Node("planner"), planner_(robot::PlannerCore(this->get_logger())), 
+                             state_(State::WAITING_FOR_GOAL) {
   // Subscribers
   map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
     "/map", 10, std::bind(&PlannerNode::mapCallback, this, std::placeholders::_1));
@@ -27,8 +28,10 @@ void PlannerNode::goalCallback(const geometry_msgs::msg::PointStamped::SharedPtr
   goal_ = *msg;
   goal_received_ = true;
   state_ = State::WAITING_FOR_ROBOT_TO_REACH_GOAL;
-  CellIndex goal = worldToGrid(goal_.point.x, goal_.point.y);
-  planPath();
+  
+  if (!current_map_.data.empty()) {
+    planPath();
+  }
 
 }
 
@@ -56,10 +59,12 @@ bool PlannerNode::goalReached() {
 }
 
 void PlannerNode::planPath() {
+  RCLCPP_INFO(this->get_logger(), "Calling planPath()");
   if (!goal_received_ || current_map_.data.empty()) {
     RCLCPP_WARN(this->get_logger(), "Cannot plan path: Missing map or goal!");
     return;
   }
+  
 
   nav_msgs::msg::Path path;
   path.header.stamp = this->get_clock()->now();
@@ -102,6 +107,8 @@ void PlannerNode::planPath() {
         pose.header = path.header;
         pose.pose.position.x = cell.x * current_map_.info.resolution + current_map_.info.origin.position.x + 0.5 * current_map_.info.resolution;
         pose.pose.position.y = cell.y * current_map_.info.resolution + current_map_.info.origin.position.y + 0.5 * current_map_.info.resolution;
+        pose.pose.position.z = 0.0; 
+        pose.pose.orientation.w = 1.0;
         path.poses.push_back(pose);
       }
       path_pub_->publish(path);
@@ -121,7 +128,7 @@ void PlannerNode::planPath() {
       }
 
       int grid_index = neighbor.y * current_map_.info.width + neighbor.x;
-      if (current_map_.data[grid_index] > 0) {
+      if (current_map_.data[grid_index] > 50) {
         continue;
       }
 

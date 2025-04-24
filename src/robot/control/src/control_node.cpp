@@ -19,17 +19,24 @@ ControlNode::ControlNode(): Node("control"), control_(robot::ControlCore(this->g
 }
 
 void ControlNode::controlLoop() {
-  if (!current_path_ || !robot_odom_) {
+  if (!current_path_ || !robot_odom_ || current_path_->poses.empty()) {
+    geometry_msgs::msg::Twist stop_cmd;
+    stop_cmd.linear.x = 0.0;
+    stop_cmd.angular.z = 0.0;
+    cmd_vel_pub_->publish(stop_cmd);
     return;
   }
 
   auto lookahead_point = findLookaheadPoint();
   if (!lookahead_point) {
+    geometry_msgs::msg::Twist stop_cmd;
+    stop_cmd.linear.x = 0.0;
+    stop_cmd.angular.z = 0.0;
+    cmd_vel_pub_->publish(stop_cmd);
     return;
   }
 
   auto cmd_vel = computeVelocity(*lookahead_point);
-
   cmd_vel_pub_->publish(cmd_vel);
 }
 
@@ -45,11 +52,14 @@ std::optional<geometry_msgs::msg::PoseStamped> ControlNode::findLookaheadPoint()
 
   if (this->computeDistance(robot_position, this->current_path_->poses.back().pose.position) < this->goal_tolerance_) {
     geometry_msgs::msg::Twist stop;
+    stop.linear.x = 0.0; 
+    stop.angular.z = 0.0;
     this->cmd_vel_pub_->publish(stop);
+    return std::nullopt;
   }
 
 
-  return std::nullopt;
+  return this->current_path_->poses.back();
 }
 
 geometry_msgs::msg::Twist ControlNode::computeVelocity(const geometry_msgs::msg::PoseStamped &target) {

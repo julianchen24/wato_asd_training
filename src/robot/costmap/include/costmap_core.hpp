@@ -15,6 +15,7 @@ class CostmapCore {
 
   private:
     rclcpp::Logger logger_;
+    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;
 
 };
 

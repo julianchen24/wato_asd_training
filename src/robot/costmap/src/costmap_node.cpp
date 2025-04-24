@@ -13,6 +13,9 @@ CostmapNode::CostmapNode() : Node("costmap"), costmap_(robot::CostmapCore(this->
   // Initialize the constructs and their parameters
   costmap_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("/costmap", 10);
   string_pub_ = this->create_publisher<std_msgs::msg::String>("/test_topic", 10);
+  laser_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+    "/lidar", 10, std::bind(&CostmapNode::laserCallback, this, std::placeholders::_1));
+
   timer_ = this->create_wall_timer(std::chrono::milliseconds(500), std::bind(&CostmapNode::publishMessage, this));
 }
  
@@ -34,10 +37,12 @@ void CostmapNode::initalizeCostMap() {
 }
 
 
-// This might be problematic for the future, return if necessary
 void CostmapNode::convertToGrid(double range, double angle, int& x_grid, int& y_grid) {
-  x_grid = range*std::cos(angle);
-  y_grid = range*std::sin(angle);
+  double x_world = range * std::cos(angle);
+  double y_world = range * std::sin(angle);
+
+  x_grid = static_cast<int>((x_world / resolution) + (this->x_grid / 2));
+  y_grid = static_cast<int>((y_world / resolution) + (this->y_grid / 2));
 }
 
 void CostmapNode::markObstacle(int x_grid, int y_grid) {

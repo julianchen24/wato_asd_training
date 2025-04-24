@@ -33,6 +33,7 @@ class CostmapNode : public rclcpp::Node {
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr string_pub_;
    // Costmap publisher (you need this!)
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_pub_;
+    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;
 
 };
  

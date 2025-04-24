@@ -15,12 +15,23 @@ MapMemoryNode::MapMemoryNode() : Node("map_memory"), map_memory_(robot::MapMemor
   timer_ = this->create_wall_timer(
     std::chrono::seconds(1), std::bind(&MapMemoryNode::updateMap, this));
 
+  global_map_.header.frame_id = "map";
+
+  global_map_.info.resolution = 0.1; 
+  global_map_.info.width = 100;       
+  global_map_.info.height = 100;    
+  global_map_.info.origin.position.x = -25.0;
+  global_map_.info.origin.position.y = -25.0;
+  global_map_.info.origin.position.z = 0.0;
+  global_map_.info.origin.orientation.w = 1.0;
+
+  global_map_.data.resize(global_map_.info.width * global_map_.info.height, -1);
+  map_pub_->publish(global_map_);
 }
 
 void MapMemoryNode::costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
   latest_costmap_ = *msg;
   costmap_updated_ = true;
-
 }
 
 void MapMemoryNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
@@ -38,7 +49,7 @@ void MapMemoryNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
 }
 
 void MapMemoryNode::updateMap() {
-  if (should_update_map_ && costmap_updated_) {
+  if (costmap_updated_) {
     integrateCostmap();
     map_pub_->publish(global_map_);
     should_update_map_ = false;
