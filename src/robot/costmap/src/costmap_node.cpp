@@ -38,11 +38,32 @@ void CostmapNode::initalizeCostMap() {
 
 
 void CostmapNode::convertToGrid(double range, double angle, int& x_grid, int& y_grid) {
-  double x_world = range * std::cos(angle);
-  double y_world = range * std::sin(angle);
+  // double x_world = range * std::cos(angle);
+  // double y_world = range * std::sin(angle);
 
-  x_grid = static_cast<int>((x_world / resolution) + (this->x_grid / 2));
-  y_grid = static_cast<int>((y_world / resolution) + (this->y_grid / 2));
+  // x_grid = static_cast<int>((x_world / resolution) + (this->x_grid / 2));
+  // y_grid = static_cast<int>((y_world / resolution) + (this->y_grid / 2));
+  
+  double x_local = range * std::cos(angle);
+  double y_local = range * std::sin(angle);
+
+  double map_w = static_cast<double>(this->x_grid) * resolution;
+  double map_h = static_cast<double>(this->y_grid) * resolution;
+
+  double x_world = x_local + map_w * 0.5;
+  double y_world = y_local + map_h * 0.5;
+
+  double fx = x_world / resolution;
+  double fy = y_world / resolution;
+
+  int ix = static_cast<int>(std::floor(fx));
+  int iy = static_cast<int>(std::floor(fy));
+  ix = std::clamp(ix, 0, this->x_grid - 1);
+  iy = std::clamp(iy, 0, this->y_grid - 1);
+
+  // **use the parameter names** here**
+  x_grid = ix;
+  y_grid = iy;
 }
 
 void CostmapNode::markObstacle(int x_grid, int y_grid) {
@@ -53,7 +74,7 @@ void CostmapNode::markObstacle(int x_grid, int y_grid) {
 void CostmapNode::inflateObstacles() {
   double radius = 1.0;
   double max_cost = 100.0;
-  double cell_radius = static_cast<int>(radius / resolution);
+  int cell_radius = static_cast<int>(radius / resolution);
 
   for (int y{0}; y < y_grid; ++y) {
     for (int x{0}; x < x_grid; ++x) {
@@ -90,13 +111,12 @@ void CostmapNode::publishCostmap() {
   costmap_msg.info.origin.position.x = -(x_grid * resolution)/2;
   costmap_msg.info.origin.position.y = -(y_grid * resolution)/2;
 
-  std::vector<int8_t> data(x_grid * y_grid, 0);
+  costmap_msg.data.resize(x_grid * y_grid);
   for (int y{0}; y < y_grid; ++y) {
     for (int x{0}; x < x_grid; ++x) {
-      data.push_back(static_cast<int8_t>(OccupancyGrid[x][y]));
+      costmap_msg.data[y * x_grid + x] = static_cast<int8_t>(OccupancyGrid[x][y]);
     }
   }
-  costmap_msg.data = data;
   costmap_pub_->publish(costmap_msg);
 }
 

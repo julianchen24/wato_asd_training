@@ -4,6 +4,17 @@
 #include <cmath>
 
 MapMemoryNode::MapMemoryNode() : Node("map_memory"), map_memory_(robot::MapMemoryCore(this->get_logger())) {
+  global_map_.header.stamp = this->now();
+  global_map_.header.frame_id = "map";
+  global_map_.info.resolution = 0.1; 
+  global_map_.info.width = 100;       
+  global_map_.info.height = 100;    
+  global_map_.info.origin.position.x = -5.0;
+  global_map_.info.origin.position.y = -5.0;
+  global_map_.info.origin.position.z = 0.0;
+  global_map_.info.origin.orientation.w = 1.0;
+
+  global_map_.data.resize(global_map_.info.width * global_map_.info.height, -1);
   costmap_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
     "/costmap", 10, std::bind(&MapMemoryNode::costmapCallback, this, std::placeholders::_1));
 
@@ -15,18 +26,7 @@ MapMemoryNode::MapMemoryNode() : Node("map_memory"), map_memory_(robot::MapMemor
   timer_ = this->create_wall_timer(
     std::chrono::seconds(1), std::bind(&MapMemoryNode::updateMap, this));
 
-  global_map_.header.frame_id = "map";
-
-  global_map_.info.resolution = 0.1; 
-  global_map_.info.width = 100;       
-  global_map_.info.height = 100;    
-  global_map_.info.origin.position.x = -25.0;
-  global_map_.info.origin.position.y = -25.0;
-  global_map_.info.origin.position.z = 0.0;
-  global_map_.info.origin.orientation.w = 1.0;
-
-  global_map_.data.resize(global_map_.info.width * global_map_.info.height, -1);
-  map_pub_->publish(global_map_);
+    map_pub_->publish(global_map_);
 }
 
 void MapMemoryNode::costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {

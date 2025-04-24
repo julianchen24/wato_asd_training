@@ -18,21 +18,28 @@ PlannerNode::PlannerNode() : Node("planner"), planner_(robot::PlannerCore(this->
 }
 
 void PlannerNode::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
+  if (msg->data.empty() || msg->info.width == 0 || msg->info.height == 0) {
+    RCLCPP_WARN(this->get_logger(), "Received empty or invalid map");
+    return;
+  }
+
   current_map_ = *msg;
-  if (state_ == State::WAITING_FOR_ROBOT_TO_REACH_GOAL) {
+  if (state_ == State::WAITING_FOR_ROBOT_TO_REACH_GOAL && goal_received_) {
     planPath();
   }
 
 }
 void PlannerNode::goalCallback(const geometry_msgs::msg::PointStamped::SharedPtr msg) {
   goal_ = *msg;
+  if (goal_.header.frame_id.empty()) {
+    current_map_.header.frame_id;
+  }
   goal_received_ = true;
   state_ = State::WAITING_FOR_ROBOT_TO_REACH_GOAL;
-  
+
   if (!current_map_.data.empty()) {
     planPath();
   }
-
 }
 
 void PlannerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
@@ -41,6 +48,11 @@ void PlannerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
 
 void PlannerNode::timerCallback() {
   if (state_ == State::WAITING_FOR_ROBOT_TO_REACH_GOAL) {
+    if (current_map_.data.empty() || !goal_received_) {
+      RCLCPP_INFO(this->get_logger(), "Waiting for required data...");
+      return;
+    }
+
     if (goalReached()) {
       RCLCPP_INFO(this->get_logger(), "Goal reached!");
       state_ = State::WAITING_FOR_GOAL;
@@ -67,8 +79,8 @@ void PlannerNode::planPath() {
   
 
   nav_msgs::msg::Path path;
-  path.header.stamp = this->get_clock()->now();
-  path.header.frame_id = current_map_.header.frame_id;
+  path.header.stamp = this->now();
+  path.header.frame_id = "map";
 
   CellIndex start = worldToGrid(robot_pose_.position.x, robot_pose_.position.y);
   CellIndex goal = worldToGrid(goal_.point.x, goal_.point.y);
@@ -102,17 +114,23 @@ void PlannerNode::planPath() {
       cell_path.push_back(start);
       std::reverse(cell_path.begin(), cell_path.end());
 
-      for (const auto& cell : cell_path) {
-        geometry_msgs::msg::PoseStamped pose;
-        pose.header = path.header;
-        pose.pose.position.x = cell.x * current_map_.info.resolution + current_map_.info.origin.position.x + 0.5 * current_map_.info.resolution;
-        pose.pose.position.y = cell.y * current_map_.info.resolution + current_map_.info.origin.position.y + 0.5 * current_map_.info.resolution;
-        pose.pose.position.z = 0.0; 
-        pose.pose.orientation.w = 1.0;
-        path.poses.push_back(pose);
+      if (!cell_path.empty()) {
+        for (const auto& cell : cell_path) {
+          geometry_msgs::msg::PoseStamped pose;
+          pose.header = path.header;
+          pose.pose.position.x = cell.x * current_map_.info.resolution + current_map_.info.origin.position.x + 0.5 * current_map_.info.resolution;
+          pose.pose.position.y = cell.y * current_map_.info.resolution + current_map_.info.origin.position.y + 0.5 * current_map_.info.resolution;
+          pose.pose.position.z = 0.0; 
+          pose.pose.orientation.w = 1.0;
+          path.poses.push_back(pose);
+        }
       }
-      path_pub_->publish(path);
-      return;
+      if (!path.poses.empty()) {
+        RCLCPP_INFO(this->get_logger(), "Publishing path with %zu points", path.poses.size());
+        path_pub_->publish(path);
+        return;
+      }
+      
     }
 
     std::vector<CellIndex> neighbors = {
@@ -128,6 +146,10 @@ void PlannerNode::planPath() {
       }
 
       int grid_index = neighbor.y * current_map_.info.width + neighbor.x;
+      if (grid_index >= static_cast<int>(current_map_.data.size())) {
+        continue;
+      }
+
       if (current_map_.data[grid_index] > 50) {
         continue;
       }
@@ -149,13 +171,32 @@ void PlannerNode::planPath() {
       }
     }
   }
-  RCLCPP_WARN(this->get_logger(), "Path not found.");
+
+  if (path.poses.empty()) {
+      RCLCPP_WARN(this->get_logger(), "No path found");
+      // Publish empty path to clear any previous path
+      path.header.stamp = this->get_clock()->now();
+      path.header.frame_id = current_map_.header.frame_id;
+  }
   path_pub_->publish(path);
 }
 
 CellIndex PlannerNode::worldToGrid(double x, double y) const {
-  int gx = static_cast<int>((x - current_map_.info.origin.position.x) / current_map_.info.resolution);
-  int gy = static_cast<int>((y - current_map_.info.origin.position.y) / current_map_.info.resolution);
+  // int gx = static_cast<int>(std::round((x - current_map_.info.origin.position.x) / current_map_.info.resolution));
+  // int gy = static_cast<int>(std::round((y - current_map_.info.origin.position.y) / current_map_.info.resolution));
+
+  // gx = std::max(0, std::min(gx, static_cast<int>(current_map_.info.width - 1)));
+  // gy = std::max(0, std::min(gy, static_cast<int>(current_map_.info.height - 1)));
+
+  const auto &info = current_map_.info;
+  double fx = (x - info.origin.position.x) / info.resolution;
+  double fy = (y - info.origin.position.y) / info.resolution;
+
+  int gx = static_cast<int>(std::floor(fx));
+  int gy = static_cast<int>(std::floor(fy));
+
+  gx = std::clamp(gx, 0, static_cast<int>(info.width)  - 1);
+  gy = std::clamp(gy, 0, static_cast<int>(info.height) - 1);
   return CellIndex(gx, gy);
 }
 int main(int argc, char ** argv)

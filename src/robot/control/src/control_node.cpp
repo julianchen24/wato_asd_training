@@ -19,7 +19,14 @@ ControlNode::ControlNode(): Node("control"), control_(robot::ControlCore(this->g
 }
 
 void ControlNode::controlLoop() {
-  if (!current_path_ || !robot_odom_ || current_path_->poses.empty()) {
+  if (!current_path_ || !robot_odom_) {
+    geometry_msgs::msg::Twist stop_cmd;
+    stop_cmd.linear.x = 0.0;
+    stop_cmd.angular.z = 0.0;
+    cmd_vel_pub_->publish(stop_cmd);
+    return;
+  }
+  if (current_path_->poses.empty()) {
     geometry_msgs::msg::Twist stop_cmd;
     stop_cmd.linear.x = 0.0;
     stop_cmd.angular.z = 0.0;
