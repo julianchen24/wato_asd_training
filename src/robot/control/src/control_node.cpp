@@ -42,14 +42,14 @@ void ControlNode::controlLoop() {
   }
 
   auto lookahead_point = findLookaheadPoint();
-  // if (!lookahead_point) {
-  //   geometry_msgs::msg::Twist stop_cmd;
-  //   stop_cmd.linear.x = 0.0;
-  //   stop_cmd.angular.z = 0.0;
-  //   cmd_vel_pub_->publish(stop_cmd);
-  //   RCLCPP_WARN(this->get_logger(), "No valid lookahead point found, stopping robot");
-  //   return;
-  // }
+  if (!lookahead_point) {
+    geometry_msgs::msg::Twist stop_cmd;
+    stop_cmd.linear.x = 0.0;
+    stop_cmd.angular.z = 0.0;
+    cmd_vel_pub_->publish(stop_cmd);
+    RCLCPP_WARN(this->get_logger(), "No valid lookahead point found, stopping robot");
+    return;
+  }
   auto cmd_vel = computeVelocity(*lookahead_point);
   cmd_vel_pub_->publish(cmd_vel);
 }
@@ -62,7 +62,6 @@ std::optional<geometry_msgs::msg::PoseStamped> ControlNode::findLookaheadPoint()
   auto robot_position = this->robot_odom_->pose.pose.position;
   double distance_to_final = this->computeDistance(robot_position, this->current_path_->poses.back().pose.position);
   if (distance_to_final < this->goal_tolerance_) {
-    RCLCPP_INFO(this->get_logger(), "At goal - distance to final: %.2f", distance_to_final);
     return std::nullopt;
   }
 

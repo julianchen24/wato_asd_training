@@ -66,7 +66,7 @@ void PlannerNode::timerCallback() {
 bool PlannerNode::goalReached() {
   double dx = goal_.point.x - robot_pose_.position.x;
   double dy = goal_.point.y - robot_pose_.position.y;
-  return std::sqrt(dx * dx + dy * dy) < 0.5;
+  return std::sqrt(dx * dx + dy * dy) < 0.2;
   
 }
 
@@ -175,8 +175,7 @@ void PlannerNode::planPath() {
   if (path.poses.empty()) {
       RCLCPP_WARN(this->get_logger(), "No path found");
       // Publish empty path to clear any previous path
-      path.header.stamp = this->get_clock()->now();
-      path.header.frame_id = current_map_.header.frame_id;
+      return;
   }
   path_pub_->publish(path);
 }
