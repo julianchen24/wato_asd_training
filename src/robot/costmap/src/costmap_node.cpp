@@ -33,7 +33,13 @@ void CostmapNode::initalizeCostMap() {
   double map_height = 100.0;
   x_grid = static_cast<int>(map_width / resolution);
   y_grid = static_cast<int>(map_height / resolution);
-  OccupancyGrid.resize(x_grid, std::vector<int>(y_grid,0));
+  if (OccupancyGrid.empty()) {
+    OccupancyGrid.resize(x_grid, std::vector<int>(y_grid, 0));
+  } else {
+    for (auto& row : OccupancyGrid) {
+      std::fill(row.begin(), row.end(), 0);
+    }
+  }
 }
 
 
@@ -72,33 +78,39 @@ void CostmapNode::markObstacle(int x_grid, int y_grid) {
 }
 
 void CostmapNode::inflateObstacles() {
-  double radius = 0.5;
+  double radius = 1.5; 
   double max_cost = 100.0;
   int cell_radius = static_cast<int>(radius / resolution);
-
-  for (int y{0}; y < y_grid; ++y) {
-    for (int x{0}; x < x_grid; ++x) {
-      if (OccupancyGrid[x][y] == static_cast<int>(max_cost)) {
-        for (int dy{cell_radius}; dy >= -cell_radius; --dy) {
-          for (int dx{cell_radius}; dx >= -cell_radius; --dx) {
+  auto temp_grid = OccupancyGrid;
+  
+  for (int y = 0; y < y_grid; ++y) {
+    for (int x = 0; x < x_grid; ++x) {
+      if (OccupancyGrid[x][y] == 100) {
+        for (int dy = -cell_radius; dy <= cell_radius; ++dy) {
+          for (int dx = -cell_radius; dx <= cell_radius; ++dx) {
             int i = x + dx;
             int j = y + dy;
             if (i < 0 || i >= x_grid || j < 0 || j >= y_grid) {
               continue;
             }
-            if (OccupancyGrid[i][j] == static_cast<int>(max_cost)) {
+            
+            if (temp_grid[i][j] == 100) {
               continue;
             }
-            double distance = std::sqrt(std::pow(dy,2) + std::pow(dx,2));
-            double temp_cost = max_cost * (1 - (distance/radius));
-            if (temp_cost > OccupancyGrid[i][j]) {
-              OccupancyGrid[i][j] = temp_cost;
+            
+            double distance = std::sqrt(dx*dx + dy*dy) * resolution;
+            if (distance <= radius) {
+              int cost = static_cast<int>(max_cost * (1.0 - (distance / radius)));
+              if (cost > temp_grid[i][j]) {
+                temp_grid[i][j] = cost;
+              }
             }
           }
-        }  
+        }
       }
     }
   }
+  OccupancyGrid = temp_grid;
 }
 
 void CostmapNode::publishCostmap() {
@@ -123,8 +135,8 @@ void CostmapNode::publishCostmap() {
 
 
 void CostmapNode::laserCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan) {
+  OccupancyGrid.clear();
   initalizeCostMap();
-
   for (size_t i{0}; i < scan->ranges.size(); ++i) {
     double angle = scan->angle_min + i * scan->angle_increment;
     double range = scan->ranges[i];

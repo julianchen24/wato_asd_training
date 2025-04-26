@@ -56,6 +56,7 @@ void PlannerNode::timerCallback() {
     if (goalReached()) {
       RCLCPP_INFO(this->get_logger(), "Goal reached!");
       state_ = State::WAITING_FOR_GOAL;
+      goal_received_ = false;
       nav_msgs::msg::Path empty_path;
       empty_path.header.stamp = this->now();
       empty_path.header.frame_id = "sim_world";
