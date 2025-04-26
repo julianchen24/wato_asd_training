@@ -14,7 +14,7 @@ class CostmapNode : public rclcpp::Node {
     CostmapNode();
     
     // Place callback function here
-    void publishMessage();
+    // void publishMessage();
     void laserCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan);
     void initalizeCostMap(); 
     void convertToGrid(double range, double angle, int& x_grid, int& y_grid);
