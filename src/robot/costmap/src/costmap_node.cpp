@@ -29,8 +29,8 @@ void CostmapNode::publishMessage() {
 
 
 void CostmapNode::initalizeCostMap() {
-  double map_width = 10.0;
-  double map_height = 10.0;
+  double map_width = 100.0;
+  double map_height = 100.0;
   x_grid = static_cast<int>(map_width / resolution);
   y_grid = static_cast<int>(map_height / resolution);
   OccupancyGrid.resize(x_grid, std::vector<int>(y_grid,0));
@@ -103,7 +103,7 @@ void CostmapNode::inflateObstacles() {
 
 void CostmapNode::publishCostmap() {
   nav_msgs::msg::OccupancyGrid costmap_msg;
-  costmap_msg.header.frame_id = "map";
+  costmap_msg.header.frame_id = "sim_world";
   costmap_msg.header.stamp = this->now();
   costmap_msg.info.resolution = resolution;
   costmap_msg.info.width = x_grid;

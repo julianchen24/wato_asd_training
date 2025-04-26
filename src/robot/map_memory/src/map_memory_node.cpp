@@ -5,12 +5,12 @@
 
 MapMemoryNode::MapMemoryNode() : Node("map_memory"), map_memory_(robot::MapMemoryCore(this->get_logger())) {
   global_map_.header.stamp = this->now();
-  global_map_.header.frame_id = "map";
+  global_map_.header.frame_id = "sim_world";
   global_map_.info.resolution = 0.1; 
-  global_map_.info.width = 100;       
-  global_map_.info.height = 100;    
-  global_map_.info.origin.position.x = -5.0;
-  global_map_.info.origin.position.y = -5.0;
+  global_map_.info.width = 500;       
+  global_map_.info.height = 500;    
+  global_map_.info.origin.position.x = -25.0;
+  global_map_.info.origin.position.y = -25.0;
   global_map_.info.origin.position.z = 0.0;
   global_map_.info.origin.orientation.w = 1.0;
 

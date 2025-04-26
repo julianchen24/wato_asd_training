@@ -32,7 +32,7 @@ void PlannerNode::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 void PlannerNode::goalCallback(const geometry_msgs::msg::PointStamped::SharedPtr msg) {
   goal_ = *msg;
   if (goal_.header.frame_id.empty()) {
-    current_map_.header.frame_id;
+    goal_.header.frame_id = current_map_.header.frame_id;
   }
   goal_received_ = true;
   state_ = State::WAITING_FOR_ROBOT_TO_REACH_GOAL;
@@ -80,7 +80,7 @@ void PlannerNode::planPath() {
 
   nav_msgs::msg::Path path;
   path.header.stamp = this->now();
-  path.header.frame_id = "map";
+  path.header.frame_id = "sim_world";
 
   CellIndex start = worldToGrid(robot_pose_.position.x, robot_pose_.position.y);
   CellIndex goal = worldToGrid(goal_.point.x, goal_.point.y);

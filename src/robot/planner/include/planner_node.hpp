@@ -75,19 +75,26 @@ class PlannerNode : public rclcpp::Node {
     void planPath();
     bool goalReached();
 
+    // Helper functions for A* pathfinding
+    CellIndex worldToGrid(double x, double y) const;
+    double calculateHeuristic(const CellIndex& a, const CellIndex& b) const;
+    CellIndex findNearestFreeCell(const CellIndex& cell, int threshold = 50) const;
+    void smoothPath(nav_msgs::msg::Path& path);
+    bool isPathClear(const geometry_msgs::msg::Point& start, 
+                     const geometry_msgs::msg::Point& end) const;
+
+    // ROS subscribers, publishers, and timer
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
     rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr goal_sub_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
     rclcpp::TimerBase::SharedPtr timer_;
 
+    // State variables
     nav_msgs::msg::OccupancyGrid current_map_;
     geometry_msgs::msg::PointStamped goal_;
     geometry_msgs::msg::Pose robot_pose_;
     bool goal_received_ = false;
-    CellIndex worldToGrid(double x, double y) const;
-  
-  
 };
 
-#endif 
+#endif
